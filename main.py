@@ -1,247 +1,319 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 #
-import re, csv, pandas as pd, numpy as np, time
+import os
+import csv
+import json
+import requests
 from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException, TimeoutException, StaleElementReferenceException
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.firefox.options import Options
-########################################################################
 
-########################################################################
-# 1. Defining the required functions
-########################################################################
+URL_BASE = 'https://opcoes.net.br/opcoes/bovespa/'
+BASE_DIR = os.getcwd()
 
-def init_webdriver(url, is_firefox=True):
-    # Choosing the webdriver.
-    if not is_firefox:
-        # Running the PhantomJS webdriver.
-        driver = webdriver.PhantomJS()
-        driver.set_window_size(1120, 550)
-    else:
-        # Defining the option to the Firefox webdriver.
-        options = Options()
-        Options.set_headless = True
+LIST_MENU_BA = ['BBAS3', 'BBDC3', 'BBDC4', 'BBTG11', 'BRSR6', 'ITSA4', 'ITUB3', 'ITUB4', 'SANB11']
 
-        # Running the Firefox webdriver.
-        driver = webdriver.Firefox(
-            executable_path = "/home/breno/geckodriver/geckodriver", options=options)
+LIST_MENU_ML = ['ABEV3', 'AZUL4', 'B3SA3', 'BBAS3', 'BBDC3', 'BBDC4', 'BBSE3', 'BOVA11', 'BRAP4', 'BRFS3', 'BRKM5', 'BRML3',
+                'BTOW3', 'CIEL3', 'CMIG4', 'COGN3', 'CSAN3', 'CSNA3', 'CYRE3', 'ELET3', 'ELET6', 'EMBR3', 'EQTL3', 'GGBR4',
+                'GOAU4', 'HYPE3', 'IRBR3', 'ITSA4', 'ITUB4', 'JBSS3', 'LAME4', 'LREN3', 'MGLU3', 'MRFG3', 'PCAR3', 'PETR3',
+                'PETR4', 'RADL3', 'RAIL3', 'SANB11', 'SBSP3', 'SUZB3', 'TAEE11', 'USIM5', 'VALE3', 'VIVT4', 'VVAR3', 'WEGE3', 'YDUQ3'
+                ]
 
-    # Getting the web page.
-    driver.get(url)
+LIST_MENU_PV = ['PETR3', 'PETR4', 'VALE3', 'VALE5']
 
-    # Setting the time of page refresh to 1 day (24 hours).
-    driver.execute_script("propriedadeTempoDoRefreshAutomatico = 86400000;")
+LIST_MENU_PO = ['ABEV3', 'AZUL4', 'B3SA3', 'BBAS3', 'BBDC3', 'BBDC4', 'BBSE3', 'BEEF3', 'BOVA11', 'BRAP4', 'BRDT3', 'BRFS3',
+                'BRKM5', 'BRML3', 'BRSR6', 'BTOW3', 'CCRO3', 'CIEL3', 'CMIG4', 'COGN3', 'CSAN3', 'CSNA3', 'CVCB3', 'CYRE3',
+                'ECOR3', 'EGIE3', 'ELET3', 'ELET6', 'EMBR3', 'ENAT3', 'ENBR3', 'EQTL3', 'FLRY3', 'GFSA3', 'GGBR4', 'GOAU4',
+                'GOLL4', 'HYPE3', 'IRBR3', 'ITSA4', 'ITUB4', 'JBSS3', 'JHSF3', 'KLBN11', 'LAME4', 'LREN3', 'MEAL3', 'MGLU3',
+                'MRFG3', 'MRVE3', 'MULT3', 'NEOE3', 'PCAR3', 'PETR3', 'PETR4', 'POMO4', 'PRIO3', 'RADL3', 'RAIL3', 'SANB11',
+                'SBSP3', 'SMLS3', 'SUZB3', 'TAEE11', 'TIET11', 'TIMS3', 'UGPA3', 'USIM5', 'VALE3', 'VIVT4', 'VLID3', 'VVAR3',
+                'WEGE3', 'YDUQ3'
+                ]
 
-    return driver
+LIST_MENU_TA = ['ABEV3', 'ALPA4', 'ALSO3', 'ALUP11', 'ARZZ3', 'AZUL4', 'B3SA3', 'BBAS3', 'BBDC3', 'BBDC4', 'BBSE3', 'BEEF3', 'BKBR3', 'BOVA11',
+                'BOVV11', 'BPAC11', 'BPAN4', 'BRAP4', 'BRDT3', 'BRFS3', 'BRKM5', 'BRML3', 'BRSR6', 'BTOW3', 'CCRO3', 'CESP6', 'CIEL3', 'CMIG4',
+                'COGN3', 'CPFE3', 'CPLE6', 'CRFB3', 'CSAN3', 'CSMG3', 'CSNA3', 'CVCB3', 'CYRE3', 'DIRR3', 'DTEX3', 'ECOR3', 'EGIE3', 'ELET3', 'ELET6',
+                'EMBR3', 'ENAT3', 'ENBR3', 'ENEV3', 'ENGI11', 'EQTL3', 'EVEN3', 'EZTC3', 'FLRY3', 'GFSA3', 'GGBR4', 'GNDI3', 'GOAU4', 'GOLL4', 'GRND3',
+                'HAPV3', 'HBOR3', 'HGTX3', 'HYPE3', 'IBOV11', 'IGTA3', 'IRBR3', 'ITSA4', 'ITUB3', 'ITUB4', 'IVVB11', 'JBSS3', 'JHSF3', 'KLBN11',
+                'LAME3', 'LAME4', 'LCAM3', 'LIGT3', 'LINX3', 'LOGN3', 'LREN3', 'LWSA3', 'MDIA3', 'MEAL3', 'MGLU3', 'MOVI3', 'MRFG3', 'MRVE3',
+                'MULT3', 'MYPK3', 'NEOE3', 'NTCO3', 'ODPV3', 'PCAR3', 'PCAR4', 'PETR3', 'PETR4', 'POMO4', 'PRIO3', 'PSSA3', 'QUAL3', 'RADL3',
+                'RAIL3', 'RAPT4', 'RENT3', 'SANB11', 'SAPR11', 'SBSP3', 'SEER3', 'SMAL11', 'SMLS3', 'SMTO3', 'STBP3', 'SULA11', 'SUZB3', 'TAEE11',
+                'TIET11', 'TIMP3', 'TIMS3', 'TOTS3', 'TRPL4', 'TUPY3', 'UGPA3', 'USIM5', 'VALE3', 'VIVT4', 'VLID3', 'VVAR3', 'WEGE3', 'YDUQ3'
+                ]
 
 
-def authenticate(driver):
-    # Waiting for 10 seconds.
-    driver.implicitly_wait(10)
+class Browser(object):
 
-    # Clicking the button "ENTRAR".
-    driver.find_element_by_id("barra-item-login").click()
+    def __init__(self):
+        """
+        Inicia o objeto...
 
-    # Opening the iframe "login".
-    WebDriverWait(driver, 60).until(EC.frame_to_be_available_and_switch_to_it(
-        (By.ID, "login-popin-iframe")))
+        """
+        self.response = None
+        self.session = requests.Session()
+        self.soup_parser = {'features': 'html5lib'}
 
-    # Authenticating with user's account data.
-    username_field = driver.find_element_by_id("login")
-    password_field = driver.find_element_by_id("password")
-    username_field.send_keys(">>> VALID USER/E-MAIL <<<")
-    password_field.send_keys(">>> YOUR PASSWORD <<<")
-    password_field.send_keys(Keys.RETURN)
+    def headers(self):
+        """
+        Obtem o cabeçalho inicial da requisição.
 
-    # Waiting for 10 seconds.
-    driver.implicitly_wait(10)
+        :return:
+        """
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:72.0)'
+                          ' Gecko/20100101 Firefox/72.0',
+        }
+        return headers
 
-    # Returning the main window.
-    driver.switch_to.default_content()
+    def send_request(self, url, method, soup_cnf, **kwargs):
+        """
+        Envia a requisição GET salvando a sessão para consulta posterior.
+        Retorna com as informações da consulta e o código fonte da página.
 
-    # Waiting for 10 seconds.
-    driver.implicitly_wait(10)
-
-    # Forcing the time of page refresh to be 1 day (24 hours).
-    driver.execute_script("propriedadeTempoDoRefreshAutomatico = 86400000;")
-
-
-def get_links(url):
-    # Getting Firefox webdriver.
-    driver = init_webdriver(url)
-
-    # Clicking the button "PROSSEGUIR".
-    WebDriverWait(driver, 10).until(EC.element_to_be_clickable(
-        (By.CSS_SELECTOR, "button.cookie-banner-lgpd_accept-button"))).click()
-
-    # Clicking the button "CANCELAR".
-    WebDriverWait(driver, 10).until(EC.element_to_be_clickable(
-        (By.ID, "onesignal-slidedown-cancel-button"))).click()
-
-    while True:
+        :param url:
+        :param method:
+        :param kwargs:
+        :return:
+        """
         try:
-            # Waiting to load the news.
-            WebDriverWait(driver, 120).until(EC.visibility_of_element_located(
-                    (By.CSS_SELECTOR, ".article-feed")))
+            response = self.session.request(method, url, **kwargs)
+        except ValueError:
+            return None
+        if response.status_code == 200:
+            try:
+                return self.format_html(response.text, soup_config=soup_cnf)
+            except ValueError:
+                return []
 
-            # Waiting to load the button "Ver Mais".
-            WebDriverWait(driver, 30).until(EC.element_to_be_clickable(
-                (By.CLASS_NAME, "article-feed__more-button")))
+    def format_html(self, response, soup_config=None):
+        """
+        Formata o html para possibilitar a raspagem de dados.
 
-            # Scrolling down to the button and clicking it.
-            button = driver.find_element_by_class_name("article-feed__more-button")
-            driver.execute_script("arguments[0].scrollIntoView();", button)
-            driver.execute_script("arguments[0].click();", button)
-        except NoSuchElementException:
-            break
-        except TimeoutException:
-            break
-        except StaleElementReferenceException:
-            break
+        :param response:
+        :param soup_config:
+        :return:
+        """
 
-    # Extracting the news URLs.
-    html_soup = BeautifulSoup(driver.page_source, "html.parser")
-    links = [link["href"] for link in html_soup.select("h1[class='article-feed-item__title'] > a")]
-
-    # Closing the Firefox webdriver.
-    driver.quit()
-
-    return links
+        self.soup_parser = soup_config or self.soup_parser
+        soup = BeautifulSoup(response, **self.soup_parser)
+        return soup
 
 
-def get_data(url, links):
-    # Getting PhantomJS webdriver.
-    driver = init_webdriver(url, False)
+class Bovespa(Browser):
 
-    # Authenticating the valid user.
-    authenticate(driver)
+    def __init__(self):
+        super().__init__()
+        self.active = ''
+        self.due_date = None
+        self.date_hour = None
+        self.list_menu = None
+        self.current_json = None
 
-    data = []
-    for idx, link in enumerate(links):
-        try:
-            # Getting the web page.
-            driver.get(link)
+    def get_actives(self, list_menu='ML'):
+        """
+        Define o tipo de ação a ser consultada e retorna uma lista de ativos.
 
-            # Defining the scraper.
-            html_soup = BeautifulSoup(driver.page_source, "html.parser")
-            record = {}
+        :param list_menu:
+        :return:
+        """
 
-            # Title.
-            if html_soup.find("h1", class_="article__title"):
-                record["title"] = re.sub(r"\s+", " ",
-                    html_soup.find("h1", class_="article__title").string).strip()
-            elif html_soup.select("div.head-materia > h1"):
-                record["title"] = re.sub(r"\s+", " ",
-                    html_soup.select("div.head-materia > h1")[0].string).strip()
+        list_actives = []
 
-            # Subtitle.
-            if html_soup.find("div", class_="article__subtitle"):
-                record["subtitle"] = re.sub(r"\s+", " ",
-                    html_soup.find("div", class_="article__subtitle").string).strip()
-            elif html_soup.select("div.head-materia > h2"):
-                record["subtitle"] = re.sub(r"\s+", " ",
-                    html_soup.select("div.head-materia > h2")[0].string).strip()
+        if list_menu != 'ML':
+            if list_menu == 'BA':
+                list_actives = LIST_MENU_BA
+            elif list_menu == 'PV':
+                list_actives = LIST_MENU_PO
+            elif list_menu == 'PO':
+                list_actives = LIST_MENU_PV
+            elif list_menu == 'TA':
+                list_actives = LIST_MENU_TA
+        else:
+            list_actives = LIST_MENU_ML
 
-            # Authors.
-            if html_soup.find("div", class_="article__author"):
-                record["author"] = re.sub(r"\s+", " ",
-                    html_soup.find("div", class_="article__author").string).strip()
-            elif html_soup.find("span", class_="autor"):
-                record["author"] = re.sub(r"\s+", " ",
-                    html_soup.find("span", class_="autor").string).strip()
+        return list_actives
 
-            # Date of Publication.
-            if html_soup.find("div", class_="article__date"):
-                record["date"] = re.sub(r"\s+", " ",
-                    html_soup.find("div", class_="article__date").string).strip()
-            elif html_soup.find("div", class_="meta-data"):
-                record["date"] = re.sub(r"\s+", " ",
-                    html_soup.find("div", class_="meta-data").text).strip()
+    def get_due_dates(self):
+        """
+        Faz a consulta de vencimentos disponíveis e retorna uma lista.
 
-            # Full text.
-            if html_soup.select("main.main-content > p"):
-                record["text"] = re.sub(r"\s+", " ", " ".join(
-                    [tag_p.text for tag_p in html_soup.select("main.main-content > p")])).strip()
-            elif html_soup.find_all("div", class_="capituloPage"):
-                record["text"] = re.sub(r"\s+", " ", " ".join(
-                    [tag_p.text for tag_div in html_soup.find_all("div", class_="capituloPage")
-                        for tag_p in tag_div.find_all("p", recursive=True)])).strip()
+        :return:
+        """
 
-            data.append(record)
-        except Exception as e:
-            print(idx)
-            raise e
+        list_due = []
+        for due_dt in self.current_json['data']['expirations']:
+            list_due.append(due_dt['dt'])
+        return list_due
 
-    # Closing the PhantomJS webdriver.
-    driver.quit()
+    def get_json(self, active, soup_cnf=None):
+        """
+        Recebe um ativo e faz a consulta retornando um json extraído do código fonte.
 
-    return data
+        :param active:
+        :param soup_cnf:
+        :return:
+        """
+
+        self.active = active
+        response = self.send_request(URL_BASE + f'{self.active}/json', 'GET', soup_cnf=soup_cnf)
+        if soup_cnf:
+            self.current_json = json.loads(response.text)
+            return self.current_json
+        json_data = json.loads(response.find('body').text)
+        self.current_json = json_data
+
+    def get_calls(self):
+        """
+        Itera na lista de operações e retorna uma lista de ações de compra.
+
+        :return:
+        """
+
+        call_list = []
+        for call in self.current_json['data']['expirations']:
+            if self.due_date:
+                if self.due_date == call['dt']:
+                    call_list.append(call['calls'])
+            else:
+                call_list.append(call['calls'])
+        if self.date_hour:
+            return self.date_hour_aplly(call_list)
+        else:
+            new_call_list = []
+            for action in call_list[0]:
+                new_call_list.append(action)
+            call_list = new_call_list
+        return call_list
+
+    def get_puts(self):
+        """
+        Itera na lista de operações e retorna uma lista de ações de venda.
+
+        :return:
+        """
+
+        put_list = []
+        for put in self.current_json['data']['expirations']:
+            if self.due_date:
+                if self.due_date == put['dt']:
+                    put_list.append(put['puts'])
+            else:
+                put_list.append(put['puts'])
+        if self.date_hour:
+            return self.date_hour_aplly(put_list)
+        else:
+            new_put_list = []
+            for action in put_list[0]:
+                new_put_list.append(action)
+            put_list = new_put_list
+        return put_list
+
+    def set_filters(self, due_date=None, date_hour=None):
+        """
+        Define o filtro ou filtros a serem aplicados.
+
+        :param due_date:
+        :param date_hour:
+        :return:
+        """
+
+        if due_date:
+            self.due_date = due_date
+        if date_hour:
+            self.date_hour = date_hour
+
+    def date_hour_aplly(self, data):
+        """
+        Aplica o filtro de data/hora no objeto e itera nele retornando uma lista de ações.
+
+        :param data:return:
+        """
+
+        list_actions = []
+        for action in data[0]:
+            for index, item in enumerate(action):
+                if self.date_hour:
+                    if index == 7:
+                        if item == self.date_hour:
+                            list_actions.append(action)
+        return list_actions
+
+    def export_to_csv(self, type, data):
+        """
+        Exporta, ou seja, cria um arquivo csv conforme o tipo.
+
+        :param type:
+        :param data:return:
+        """
+
+        print(f'\nGerando {type} CSV file...')
+
+        cols = ['TICKER', '', 'ESTILO', 'STRIKE', 'A/I/O', 'ÚLTIMO',
+                'VARIAÇÃO', 'DATA', 'NEGÓCIOS', 'VOL.FINANCEIRO', 'VOLATILIDADE',
+                'DELTA', 'GAMMA', 'THETA($)', 'THETA(%)', 'VEGA',
+                ]
+
+        file_path = os.path.join(BASE_DIR, 'src/data')
+        if not os.path.exists(file_path):
+            os.makedirs(file_path, exist_ok=True)
+
+        with open(f"{file_path}/{type}.csv", "w", encoding='UTF-8') as f:
+            writer = csv.writer(f, delimiter=",", lineterminator="\n")
+            writer.writerow(cols)
+            for item in data:
+                writer.writerow(item)
+
+        print(f'\n{type} CSV criado com sucesso.')
 
 
-# Method to define the rumor's classification.
-def set_classification(title):
-    if "#FAKE" in title and "#FATO" not in title:
-        return 1
-    elif "#FAKE" not in title and "#FATO" in title:
-        return 0
-    else:
-        return None
+if __name__ == '__main__':
+    bv = Bovespa()  # Inicia o objeto.
 
+    #  Recebe um filtro para selecão de ativos
+    actives = bv.get_actives(list_menu='TA')  # Retorna a uma lista com os ativos referente ao tipo selecionado, por padrão usa 'ML', 'TA' traz todos.
+    # print('\nLISTA DE ATIVOS: ', actives)
 
-########################################################################
-# 2. Getting the data from its URL
-########################################################################
+    """
+    #  Diz ao objeto qual o ativo que queremos extrair dados
+    result = bv.get_json(actives[0], soup_cnf={"features": "html.parser"})  # Pega os dados do ativo da posição 0 na lista de ativos, mas outros podem ser selecionados.
+    # print(json.dumps(result, indent=4))
 
-# Determining the URL of target page.
-url = "https://oglobo.globo.com/fato-ou-fake/"
+    #  Chama o método que extrai o filtro de datas de vencimentos
+    dues = bv.get_due_dates()  # Retorna uma lista com os filtros de vencimentos para serem aplicados
+    # print('\nLISTA DE VENCIMENTOS: ', dues)
 
-# Collecting the news URLs.
-links = list(set(get_links(url)))
+    #  Aplica o filtro de vencimentos e ou data/hora, aguarda por sub-filtros de compra ou venda
+    bv.set_filters(due_date=dues[0])  # Define os filtros para a busca seja de compra ou venda de um ativo, o filtro de vencimento deve ser passado com índice referente
 
-# Printing the number of links collected.
-print("Number of links collected: {}.".format(len(links)))
+    #  Chama o método que traz todas as operações de compra, ainda sem filtros aplicados
+    calls = bv.get_calls()  # Retorna uma lista com todas as operações de compra.
+    # print(calls)
 
-# Saving the backup of news URLs.
-with open("links_bkp.txt", "w") as file:
-    file.writelines([link + "\n" for link in links])
+    #  Chama o método que traz todas as operações de compra, ainda sem filtros aplicados
+    puts = bv.get_puts()  # Retorna uma lista com todas as operações de venda.
+    # print(puts)
 
-# Collecting the data.
-data = get_data(url, links)
+    print('')
 
-# Printing the number of records collected.
-print("Number of records collected: {}.".format(len(data)))
+    for action in calls:
+        print('CALL: ', action)
 
-########################################################################
-# 3. Saving the data collected
-########################################################################
+    print('*' * 150)
 
-# Creating the dataframe object.
-df_data = pd.DataFrame(data)
+    for action in puts:
+        print('PUT: ', action)
+        
+    bv.export_to_csv('PUT', puts)
+    bv.export_to_csv('CALL', calls)
+    """
 
-# Creating new features.
-df_data["id"] = df_data.index.values + 1
-df_data["link"] = links
-df_data["classification"] = df_data.title.apply(set_classification)
+    for active in actives:
+        result = bv.get_json(active, soup_cnf={"features": "html.parser"})
+        dues = bv.get_due_dates()
+        if len(dues) > 0:
+            bv.set_filters(due_date=dues[0])
 
-# Changing the type of "classification" column.
-df_data.classification.loc[
-    df_data.classification.notnull()] = df_data.classification.loc[
-        df_data.classification.notnull()].astype(np.int64)
+            calls = bv.get_calls()
+            puts = bv.get_puts()
 
-# Sorting the columns.
-df_data = df_data[
-    ["id", "link", "date", "title", "subtitle", "text", "author",
-     "classification"]
-]
-
-# Checking the information about the dataset.
-print(df_data.info())
-
-# Exporting the data to CSV file.
-df_data.to_csv("o_globo_fato_fake.csv",
-    index=False, quoting=csv.QUOTE_ALL)
+            bv.export_to_csv(f'PUT_for_{active}', puts)
+            bv.export_to_csv(f'CALL_for_{active}', calls)
