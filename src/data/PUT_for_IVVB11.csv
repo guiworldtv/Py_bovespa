@@ -1,8 +1,8 @@
 TICKER,,ESTILO,STRIKE,A/I/O,ÚLTIMO,VARIAÇÃO,DATA,NEGÓCIOS,VOL.FINANCEIRO,VOLATILIDADE,DELTA,GAMMA,THETA($),THETA(%),VEGA
 V210,0,E,210.0,O,,,,,,,,,,,
-V215,0,E,215.0,O,,,,,,,,,,,
+V215,0,E,215.0,A,,,,,,,,,,,
 V220,0,E,220.0,A,,,,,,,,,,,
-V225,0,E,225.0,A,,,,,,,,,,,
+V225,0,E,225.0,I,,,,,,,,,,,
 V230,0,E,230.0,I,,,,,,,,,,,
 V235,0,E,235.0,I,,,,,,,,,,,
 V240,0,E,240.0,I,,,,,,,,,,,
