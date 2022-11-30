@@ -1,6 +1,6 @@
 TICKER,,ESTILO,STRIKE,A/I/O,ÚLTIMO,VARIAÇÃO,DATA,NEGÓCIOS,VOL.FINANCEIRO,VOLATILIDADE,DELTA,GAMMA,THETA($),THETA(%),VEGA
-L950,0,A,95.0,A,,,,,,,,,,,
-L93,0,A,100.0,O,,,,,,,,,,,
+L950,0,A,95.0,I,,,,,,,,,,,
+L93,0,A,100.0,A,,,,,,,,,,,
 L95,0,E,101.0,O,,,,,,,,,,,
 L102,0,A,102.0,O,,,,,,,,,,,
 L96,0,E,103.0,O,,,,,,,,,,,
