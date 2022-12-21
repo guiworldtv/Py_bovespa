@@ -1,8 +1,8 @@
 TICKER,,ESTILO,STRIKE,A/I/O,ÚLTIMO,VARIAÇÃO,DATA,NEGÓCIOS,VOL.FINANCEIRO,VOLATILIDADE,DELTA,GAMMA,THETA($),THETA(%),VEGA
 A800,0,A,80.0,I,,,,,,,,,,,
 A880,0,A,88.0,I,,,,,,,,,,,
-A900,0,A,90.0,A,,,,,,,,,,,
-A950,0,A,95.0,O,,,,,,,,,,,
+A900,0,A,90.0,I,,,,,,,,,,,
+A950,0,A,95.0,A,,,,,,,,,,,
 A970,0,A,97.0,O,,,,,,,,,,,
 A980,0,A,98.0,O,,,,,,,,,,,
 A114,0,A,114.0,O,1.62,,22/11/2022,2,1298000.0,,,,,,
