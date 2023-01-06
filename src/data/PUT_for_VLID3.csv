@@ -1,5 +1,5 @@
 TICKER,,ESTILO,STRIKE,A/I/O,ÚLTIMO,VARIAÇÃO,DATA,NEGÓCIOS,VOL.FINANCEIRO,VOLATILIDADE,DELTA,GAMMA,THETA($),THETA(%),VEGA
-M650,0,E,6.5,O,,,,,,,,,,,
-M105,0,E,10.5,I,,,,,,,,,,,
-M145,0,E,14.5,I,,,,,,,,,,,
-M185,0,E,18.5,I,,,,,,,,,,,
+M650,0,E,6.28,O,,,,,,,,,,,
+M105,0,E,10.28,I,,,,,,,,,,,
+M145,0,E,14.28,I,,,,,,,,,,,
+M185,0,E,18.28,I,,,,,,,,,,,
